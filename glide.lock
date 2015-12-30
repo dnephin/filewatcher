@@ -1,0 +1,16 @@
+hash: 34e33e21d491df4c13f2d2545177091b339fcb9ec9036192bfbffa2d8f67d770
+updated: 2015-12-30T19:14:17.967748273Z
+imports:
+- name: github.com/Sirupsen/logrus
+  version: 446d1c146faa8ed3f4218f056fcd165f6bcfda81
+- name: github.com/spf13/pflag
+  version: 7f60f83a2c81bc3c3c0d5297f61ddfa68da9d3b7
+- name: gopkg.in/airbrake/gobrake.v2
+  version: c9d51adc624b5cc4c1bf8de730a09af4878ffe2d
+  repo: https://gopkg.in/airbrake/gobrake.v2
+- name: gopkg.in/fsnotify.v1
+  version: 508915b7500b6e42a87132e4afeb4729cebc7cbb
+- name: gopkg.in/gemnasium/logrus-airbrake-hook.v2
+  version: 31e6fd4bd5a98d8ee7673d24bc54ec73c31810dd
+  repo: https://gopkg.in/gemnasium/logrus-airbrake-hook.v2
+devImports: []

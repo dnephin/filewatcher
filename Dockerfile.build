@@ -1,0 +1,16 @@
+
+FROM    golang:1.5
+
+ARG     GLIDE_VERSION=0.8.2
+RUN     curl -sL \ 
+            https://github.com/Masterminds/glide/releases/download/${GLIDE_VERSION}/glide-${GLIDE_VERSION}-linux-amd64.tar.gz | \
+        tar -xz linux-amd64/glide && \
+        mv linux-amd64/glide /usr/bin/glide && \
+        chmod +x /usr/bin/glide
+
+WORKDIR /go/src/github.com/dnephin/filewatcher
+
+ENV     CGO_ENABLED=0
+ENV     GO15VENDOREXPERIMENT=1
+
+RUN     go get github.com/stretchr/testify
