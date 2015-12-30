@@ -44,3 +44,11 @@ variables are:
 
 * ``filepath`` - the relative path to the file that changed
 * ``dir`` - the directory of the file that changed
+
+
+TODO
+----
+
+* support recursively watching directories
+* support reading options from a config file ``.filewatcher.yaml``
+* more variable substituions?

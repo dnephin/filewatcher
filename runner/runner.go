@@ -85,5 +85,6 @@ func (runner *Runner) Run(filename string) error {
 	cmd := exec.Command(output[0], output[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 	return cmd.Run()
 }
