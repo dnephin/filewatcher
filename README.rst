@@ -12,6 +12,17 @@ Install
 
     go get github.com/dnephin/filewatcher
 
+Examples
+--------
+
+**Run go tests**
+
+Run go tests for a package when a file is modified, exclude vim swap files.
+
+.. code::
+
+    filewatcher -d . -d runner -x '*/*.swp' go test './${dir}'
+
 
 Usage
 -----
