@@ -21,7 +21,7 @@ Run go tests for a package when a file is modified, exclude vim swap files.
 
 .. code::
 
-    filewatcher -d . -d runner -x '*/*.swp' go test './${dir}'
+    filewatcher -L 3 -x '*/*.swp' go test './${dir}'
 
 
 Usage
@@ -49,6 +49,6 @@ variables are:
 TODO
 ----
 
-* support recursively watching directories
+* support ``**`` to expand to all directories
 * support reading options from a config file ``.filewatcher.yaml``
 * more variable substituions?

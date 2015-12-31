@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/dnephin/filewatcher/files"
 	"github.com/dnephin/filewatcher/runner"
 	flag "github.com/spf13/pflag"
 	"gopkg.in/fsnotify.v1"
@@ -16,6 +17,7 @@ var (
 	quiet   = flag.BoolP("quiet", "q", false, "Quiet")
 	exclude = flag.StringSliceP("exclude", "x", nil, "Exclude file patterns")
 	dirs    = flag.StringSliceP("directory", "d", []string{"."}, "Directories to watch")
+	depth   = flag.IntP("depth", "L", 5, "Descend only level directories deep.")
 )
 
 func watch(watcher *fsnotify.Watcher, runner *runner.Runner) error {
@@ -33,7 +35,7 @@ func watch(watcher *fsnotify.Watcher, runner *runner.Runner) error {
 	}
 }
 
-func buildWatcher(dirs, exclude []string) (*fsnotify.Watcher, error) {
+func buildWatcher(dirs []string) (*fsnotify.Watcher, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
@@ -67,7 +69,7 @@ func main() {
 		log.SetLevel(log.WarnLevel)
 	}
 
-	watcher, err := buildWatcher(*dirs, *exclude)
+	watcher, err := buildWatcher(files.WalkDirectories(*dirs, *depth, *exclude))
 	if err != nil {
 		log.Fatalf("Error setting up watcher: %s", err)
 	}
