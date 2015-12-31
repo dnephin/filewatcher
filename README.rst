@@ -41,7 +41,7 @@ extension that may occur in any directory in the hierarhcy.
 **Commands**
 
 Commands may include variables in the form ``${variable}`` which will be
-replaced with a value based on the filename that was modified. Supported
+replaced with a value based on the file that was modified. Supported
 variables are:
 
 * ``filepath`` - the relative path to the file that changed

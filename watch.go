@@ -54,9 +54,10 @@ func buildWatcher(dirs []string) (*fsnotify.Watcher, error) {
 func main() {
 	cmd := flag.CommandLine
 	cmd.Init(os.Args[0], flag.ExitOnError)
+	cmd.SetInterspersed(false)
 	flag.Usage = func() {
 		out := os.Stderr
-		fmt.Fprintf(out, "Usage:\n  %s [OPTIONS] COMMAND ARG1 ARGN... \n\n", os.Args[0])
+		fmt.Fprintf(out, "Usage:\n  %s [OPTIONS] COMMAND ARGS... \n\n", os.Args[0])
 		fmt.Fprintf(out, "Options:\n")
 		cmd.PrintDefaults()
 	}
