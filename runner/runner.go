@@ -1,35 +1,24 @@
 package runner
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/dnephin/filewatcher/files"
 	"gopkg.in/fsnotify.v1"
 )
 
 // Runner executes commands when an included file is modified
 type Runner struct {
-	excludes []string
+	excludes *files.ExcludeList
 	command  []string
 }
 
 // NewRunner creates a new Runner
-func NewRunner(excludes, command []string) (*Runner, error) {
-	for _, exclude := range excludes {
-		if _, err := filepath.Match(exclude, "."); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(command) == 0 {
-		return nil, fmt.Errorf("A command is required.")
-	}
-
+func NewRunner(excludes *files.ExcludeList, command []string) (*Runner, error) {
 	runner := Runner{
 		excludes: excludes,
 		command:  command,
@@ -44,24 +33,12 @@ func (runner *Runner) HandleEvent(event fsnotify.Event) error {
 	}
 
 	filename := event.Name
-	if runner.isExcluded(filename) {
+	if runner.excludes.IsMatch(filename) {
 		log.Debugf("Skipping excluded file: %s", filename)
 		return nil
 	}
 
 	return runner.Run(filename)
-}
-
-func (runner *Runner) isExcluded(filename string) bool {
-	for _, exclude := range runner.excludes {
-		// exclude patterns were already validated in NewRunner, so error
-		// can be ignored here
-		match, _ := filepath.Match(exclude, filename)
-		if match {
-			return true
-		}
-	}
-	return false
 }
 
 // Run the command for the given filename

@@ -21,7 +21,7 @@ Run go tests for a package when a file is modified, exclude vim swap files.
 
 .. code::
 
-    filewatcher -L 3 -x '*/*.swp' go test './${dir}'
+    filewatcher -x '**/*.swp' -x vendor/ -x .git go test './${dir}'
 
 
 Usage
@@ -32,9 +32,11 @@ See ``filewatcher --help``
 
 **Excludes**
 
-File globbing patterns are used to match files. See
-https://golang.org/pkg/path/filepath/#Match. Exclude paths must start with
-a ``*/`` to match files in any directory.
+File globbing patterns are used to match files, with one addition.
+See https://golang.org/pkg/path/filepath/#Match for the standard file matching
+rules.  Exclude paths may also use a ``**/`` prefix, which matches the pattern
+against any directory. This may be used to ignore files with a specific
+extension that may occur in any directory in the hierarhcy.
 
 **Commands**
 
@@ -49,6 +51,5 @@ variables are:
 TODO
 ----
 
-* support ``**`` to expand to all directories
 * support reading options from a config file ``.filewatcher.yaml``
 * more variable substituions?

@@ -8,15 +8,23 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+const (
+	separator = string(filepath.Separator)
+)
+
+// SplitDirs splits a path into directory segments after cleaning the path
+func SplitDirs(path string) []string {
+	return strings.Split(filepath.Clean(path), separator)
+}
+
 func isMaxDepth(path string, depth int) bool {
-	sep := string(filepath.Separator)
-	return len(strings.Split(filepath.Clean(path), sep)) == depth
+	return len(SplitDirs(path)) == depth
 }
 
 // WalkDirectories walks each directory in the slice to the desired depth
 // and returns a new slice which contains all the directories walked.
 // Directories may be excluded using the exclude slice.
-func WalkDirectories(dirs []string, depth int, exclude []string) []string {
+func WalkDirectories(dirs []string, depth int, exclude *ExcludeList) []string {
 	output := []string{}
 
 	walker := func(path string, info os.FileInfo, err error) error {
@@ -27,12 +35,10 @@ func WalkDirectories(dirs []string, depth int, exclude []string) []string {
 		if !info.IsDir() {
 			return nil
 		}
-
-		if isMaxDepth(path, depth) {
+		if isMaxDepth(path, depth) || exclude.IsMatch(path) {
 			return filepath.SkipDir
 		}
 
-		// TODO: use exclude
 		output = append(output, path)
 		return nil
 	}

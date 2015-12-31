@@ -17,7 +17,7 @@ var (
 	quiet   = flag.BoolP("quiet", "q", false, "Quiet")
 	exclude = flag.StringSliceP("exclude", "x", nil, "Exclude file patterns")
 	dirs    = flag.StringSliceP("directory", "d", []string{"."}, "Directories to watch")
-	depth   = flag.IntP("depth", "L", 5, "Descend only level directories deep.")
+	depth   = flag.IntP("depth", "L", 5, "Descend only level directories deep")
 )
 
 func watch(watcher *fsnotify.Watcher, runner *runner.Runner) error {
@@ -68,14 +68,23 @@ func main() {
 	if *quiet {
 		log.SetLevel(log.WarnLevel)
 	}
+	command := flag.Args()
+	if len(command) == 0 {
+		log.Fatalf("A command argument is required.")
+	}
 
-	watcher, err := buildWatcher(files.WalkDirectories(*dirs, *depth, *exclude))
+	excludeList, err := files.NewExcludeList(*exclude)
+	if err != nil {
+		log.Fatalf("Error creating exclude list: %s", err)
+	}
+
+	watcher, err := buildWatcher(files.WalkDirectories(*dirs, *depth, excludeList))
 	if err != nil {
 		log.Fatalf("Error setting up watcher: %s", err)
 	}
 	defer watcher.Close()
 
-	runner, err := runner.NewRunner(*exclude, flag.Args())
+	runner, err := runner.NewRunner(excludeList, command)
 	if err != nil {
 		log.Fatalf("Error setting up runner: %s", err)
 	}
