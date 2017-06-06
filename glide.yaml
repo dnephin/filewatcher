@@ -3,3 +3,4 @@ import:
 - package: github.com/spf13/pflag
 - package: gopkg.in/fsnotify.v1
 - package: github.com/Sirupsen/logrus
+- package: github.com/stretchr/testify

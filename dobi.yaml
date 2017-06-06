@@ -1,0 +1,63 @@
+
+meta:
+  project: filewatcher
+
+mount=source:
+  bind: .
+  path: /go/src/github.com/dnephin/filewatcher
+
+image=builder:
+  image: filewatcher-dev
+  context: dockerfiles/
+  dockerfile: Dockerfile.build
+
+image=linter:
+  image: filewatcher-lint
+  context: .
+  dockerfile: dockerfiles/Dockerfile.lint
+
+job=vendor:
+  use: builder
+  mounts: [source]
+  sources: 'glide.*'
+  artifact: 'vendor'
+  command: 'glide install -v'
+
+job=shell:
+  use: builder
+  mounts: [source]
+  interactive: true
+  provide-docker: true
+  command: sh
+
+job=watch:
+  use: builder
+  mounts: [source]
+  interactive: true
+  command: script/watch
+
+job=binary:
+  use: builder
+  mounts: [source]
+  command: script/binary
+
+job=lint:
+  use: linter
+  mounts: [source]
+
+job=lint-shell:
+  use: linter
+  mounts: [source]
+  interactive: true
+  entrypoint: sh
+
+job=test-unit:
+  use: builder
+  mounts: [source]
+  command: "bash -c 'go test -v $(glide nv)'"
+
+alias=test:
+  tasks: [test-unit]
+
+alias=deps:
+  tasks: [vendor]

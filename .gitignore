@@ -1,2 +1,4 @@
 vendor/
-filewatcher
+dist/
+.dobi/
+.glide/

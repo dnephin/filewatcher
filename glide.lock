@@ -1,26 +1,26 @@
-hash: 34e33e21d491df4c13f2d2545177091b339fcb9ec9036192bfbffa2d8f67d770
-updated: 2017-05-17T12:34:57.77298993Z
+hash: 7954d9bcb6ef60a088ddf8a75d8abda7144f0ca4cf223bbc6f6d61c596369e4b
+updated: 2017-06-06T20:12:29.488963176Z
 imports:
 - name: github.com/Sirupsen/logrus
-  version: 5e5dc898656f695e2a086b8e12559febbfc01562
+  version: 33a34430d1c3dc71777fdd677864928e5b5812bc
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
+- name: github.com/stretchr/testify
+  version: f6abca593680b2315d2075e0f5e2a9751e3f431a
+  subpackages:
+  - assert
 - name: golang.org/x/sys
-  version: 98b5b1e7e80eb60271c8dc4eba6521ec2c3e811e
+  version: b90f89a1e7a9c1f6b918820b3daa7f08488c8594
   subpackages:
   - unix
 - name: gopkg.in/fsnotify.v1
   version: 629574ca2a5df945712d3079857300b5e4da0236
 testImports:
 - name: github.com/davecgh/go-spew
-  version: 346938d642f2ec3594ed81d874461961cd0faa76
+  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
   subpackages:
   - spew
 - name: github.com/pmezard/go-difflib
-  version: 792786c7400a136282c1664665ae0a8db921c6c2
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
   subpackages:
   - difflib
-- name: github.com/stretchr/testify
-  version: 4d4bfba8f1d1027c4fdbe371823030df51419987
-  subpackages:
-  - assert
