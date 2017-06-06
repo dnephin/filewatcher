@@ -1,8 +1,10 @@
-hash: 7954d9bcb6ef60a088ddf8a75d8abda7144f0ca4cf223bbc6f6d61c596369e4b
-updated: 2017-06-06T20:12:29.488963176Z
+hash: 82e73c3af150398bde28eb13ff80fe898f486f0ad23a9687cda936046f74ff3d
+updated: 2017-06-06T21:15:25.438237477Z
 imports:
+- name: github.com/buger/goterm
+  version: bc6c333206f446a53cac4db5d2e6a4316139d737
 - name: github.com/Sirupsen/logrus
-  version: 33a34430d1c3dc71777fdd677864928e5b5812bc
+  version: 68cec9f21fbf3ea8d8f98c044bc6ce05f17b267a
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/stretchr/testify

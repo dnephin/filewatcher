@@ -4,3 +4,4 @@ import:
 - package: gopkg.in/fsnotify.v1
 - package: github.com/Sirupsen/logrus
 - package: github.com/stretchr/testify
+- package: github.com/buger/goterm

@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -8,22 +9,30 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/dnephin/filewatcher/files"
-	"gopkg.in/fsnotify.v1"
+	fsnotify "gopkg.in/fsnotify.v1"
 )
+
+// Streams used by processes created by Runner
+type Streams struct {
+	Out io.Writer
+	Err io.Writer
+	In  io.Reader
+}
 
 // Runner executes commands when an included file is modified
 type Runner struct {
 	excludes *files.ExcludeList
 	command  []string
+	streams  Streams
 }
 
 // NewRunner creates a new Runner
-func NewRunner(excludes *files.ExcludeList, command []string) (*Runner, error) {
-	runner := Runner{
+func NewRunner(excludes *files.ExcludeList, command []string, streams Streams) *Runner {
+	return &Runner{
 		excludes: excludes,
 		command:  command,
+		streams:  streams,
 	}
-	return &runner, nil
 }
 
 // Excludes returns the exclude list
@@ -32,18 +41,18 @@ func (runner *Runner) Excludes() *files.ExcludeList {
 }
 
 // HandleEvent checks runs the command if the event was a Write event
-func (runner *Runner) HandleEvent(event fsnotify.Event) error {
+func (runner *Runner) HandleEvent(event fsnotify.Event) (bool, error) {
 	if event.Op&fsnotify.Write != fsnotify.Write {
-		return nil
+		return false, nil
 	}
 
 	filename := event.Name
 	if runner.excludes.IsMatch(filename) {
 		log.Debugf("Skipping excluded file: %s", filename)
-		return nil
+		return false, nil
 	}
 
-	return runner.Run(filename)
+	return true, runner.Run(filename)
 }
 
 // Run the command for the given filename
@@ -65,8 +74,8 @@ func (runner *Runner) Run(filename string) error {
 	log.Infof("Running: %s", strings.Join(output, " "))
 
 	cmd := exec.Command(output[0], output[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
+	cmd.Stdout = runner.streams.Out
+	cmd.Stderr = runner.streams.Err
+	cmd.Stdin = runner.streams.In
 	return cmd.Run()
 }

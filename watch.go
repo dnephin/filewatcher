@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/dnephin/filewatcher/files"
 	"github.com/dnephin/filewatcher/runner"
+	"github.com/dnephin/filewatcher/ui"
 	flag "github.com/spf13/pflag"
-	"gopkg.in/fsnotify.v1"
+	fsnotify "gopkg.in/fsnotify.v1"
 )
 
 type options struct {
@@ -21,7 +23,7 @@ type options struct {
 	command []string
 }
 
-func watch(watcher *fsnotify.Watcher, runner *runner.Runner) error {
+func watch(watcher *fsnotify.Watcher, runner *runner.Runner, ui *ui.UI) error {
 	for {
 		select {
 		case event := <-watcher.Events:
@@ -33,10 +35,18 @@ func watch(watcher *fsnotify.Watcher, runner *runner.Runner) error {
 				continue
 			}
 
-			err := runner.HandleEvent(event)
-			if err != nil {
-				log.Warnf("Error while handling %s: %s", event, err)
+			start := time.Now()
+			handled, err := runner.HandleEvent(event)
+			if !handled {
+				continue
 			}
+			// TODO: handle formatting somewhere else, and add color
+			elapsed := time.Since(start)
+			msg := "OK"
+			if err != nil {
+				msg = err.Error()
+			}
+			ui.Footer(fmt.Sprintf("%s │ %s", msg, elapsed))
 		case err := <-watcher.Errors:
 			return err
 		}
@@ -101,6 +111,19 @@ func main() {
 	if len(opts.command) == 0 {
 		log.Fatalf("A command argument is required.")
 	}
+	run(opts)
+}
+
+func run(opts options) {
+	// TODO: flag to disable UI
+	ui, err := ui.SetupUI()
+	if err != nil {
+		log.Fatalf("Error seting up UI: %s", err)
+	}
+	defer ui.Reset()
+	log.SetOutput(ui.Output())
+	log.SetFormatter(&log.TextFormatter{ForceColors: true})
+	ui.Header(formatHeader(opts.command))
 
 	excludeList, err := files.NewExcludeList(opts.exclude)
 	if err != nil {
@@ -113,12 +136,9 @@ func main() {
 	}
 	defer watcher.Close()
 
-	runner, err := runner.NewRunner(excludeList, opts.command)
-	if err != nil {
-		log.Fatalf("Error setting up runner: %s", err)
-	}
-
-	if err = watch(watcher, runner); err != nil {
+	streams := runner.Streams{Out: ui.Output(), Err: ui.Output()}
+	runner := runner.NewRunner(excludeList, opts.command, streams)
+	if err = watch(watcher, runner, ui); err != nil {
 		log.Fatalf("Error during watch: %s", err)
 	}
 }
@@ -130,4 +150,9 @@ func setupLogging(opts options) {
 	if opts.quiet {
 		log.SetLevel(log.WarnLevel)
 	}
+}
+
+// TODO: move to ui package?
+func formatHeader(command []string) string {
+	return "filewatcher │ " + strings.Join(command, " ")
 }
