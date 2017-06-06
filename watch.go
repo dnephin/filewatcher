@@ -25,6 +25,13 @@ func watch(watcher *fsnotify.Watcher, runner *runner.Runner) error {
 		select {
 		case event := <-watcher.Events:
 			log.Debugf("Event: %s", event)
+
+			if isNewDir(event, runner.Excludes()) {
+				log.Debugf("Watching new directory: %s", event.Name)
+				watcher.Add(event.Name)
+				continue
+			}
+
 			err := runner.HandleEvent(event)
 			if err != nil {
 				log.Warnf("Error while handling %s: %s", event, err)
@@ -33,6 +40,20 @@ func watch(watcher *fsnotify.Watcher, runner *runner.Runner) error {
 			return err
 		}
 	}
+}
+
+func isNewDir(event fsnotify.Event, exclude *files.ExcludeList) bool {
+	if event.Op&fsnotify.Create != fsnotify.Create {
+		return false
+	}
+
+	fileInfo, err := os.Stat(event.Name)
+	if err != nil {
+		log.Warnf("Failed to stat %s: %s", event.Name, err)
+		return false
+	}
+
+	return fileInfo.IsDir() && !exclude.IsMatch(event.Name)
 }
 
 func buildWatcher(dirs []string) (*fsnotify.Watcher, error) {

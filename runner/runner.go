@@ -26,6 +26,11 @@ func NewRunner(excludes *files.ExcludeList, command []string) (*Runner, error) {
 	return &runner, nil
 }
 
+// Excludes returns the exclude list
+func (runner *Runner) Excludes() *files.ExcludeList {
+	return runner.excludes
+}
+
 // HandleEvent checks runs the command if the event was a Write event
 func (runner *Runner) HandleEvent(event fsnotify.Event) error {
 	if event.Op&fsnotify.Write != fsnotify.Write {
