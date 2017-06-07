@@ -12,13 +12,14 @@ import (
 	"gopkg.in/fsnotify.v1"
 )
 
-var (
-	verbose = flag.BoolP("verbose", "v", false, "Verbose")
-	quiet   = flag.BoolP("quiet", "q", false, "Quiet")
-	exclude = flag.StringSliceP("exclude", "x", nil, "Exclude file patterns")
-	dirs    = flag.StringSliceP("directory", "d", []string{"."}, "Directories to watch")
-	depth   = flag.IntP("depth", "L", 5, "Descend only level directories deep")
-)
+type options struct {
+	verbose bool
+	quiet   bool
+	exclude []string
+	dirs    []string
+	depth   int
+	command []string
+}
 
 func watch(watcher *fsnotify.Watcher, runner *runner.Runner) error {
 	for {
@@ -72,46 +73,61 @@ func buildWatcher(dirs []string) (*fsnotify.Watcher, error) {
 	return watcher, nil
 }
 
+func setupFlags() options {
+	opts := options{}
+	flag.BoolVarP(&opts.verbose, "verbose", "v", false, "Verbose")
+	flag.BoolVarP(&opts.quiet, "quiet", "q", false, "Quiet")
+	flag.StringSliceVarP(&opts.exclude, "exclude", "x", nil, "Exclude file patterns")
+	flag.StringSliceVarP(&opts.dirs, "directory", "d", []string{"."}, "Directories to watch")
+	flag.IntVarP(&opts.depth, "depth", "L", 5, "Descend only level directories deep")
+	return opts
+}
+
 func main() {
+	opts := setupFlags()
 	cmd := flag.CommandLine
 	cmd.Init(os.Args[0], flag.ExitOnError)
 	cmd.SetInterspersed(false)
 	flag.Usage = func() {
 		out := os.Stderr
 		fmt.Fprintf(out, "Usage:\n  %s [OPTIONS] COMMAND ARGS... \n\n", os.Args[0])
-		fmt.Fprintf(out, "Options:\n")
+		fmt.Fprint(out, "Options:\n")
 		cmd.PrintDefaults()
 	}
 	flag.Parse()
+	setupLogging(opts)
 
-	if *verbose {
-		log.SetLevel(log.DebugLevel)
-	}
-	if *quiet {
-		log.SetLevel(log.WarnLevel)
-	}
-	command := flag.Args()
-	if len(command) == 0 {
+	opts.command = flag.Args()
+	if len(opts.command) == 0 {
 		log.Fatalf("A command argument is required.")
 	}
 
-	excludeList, err := files.NewExcludeList(*exclude)
+	excludeList, err := files.NewExcludeList(opts.exclude)
 	if err != nil {
 		log.Fatalf("Error creating exclude list: %s", err)
 	}
 
-	watcher, err := buildWatcher(files.WalkDirectories(*dirs, *depth, excludeList))
+	watcher, err := buildWatcher(files.WalkDirectories(opts.dirs, opts.depth, excludeList))
 	if err != nil {
 		log.Fatalf("Error setting up watcher: %s", err)
 	}
 	defer watcher.Close()
 
-	runner, err := runner.NewRunner(excludeList, command)
+	runner, err := runner.NewRunner(excludeList, opts.command)
 	if err != nil {
 		log.Fatalf("Error setting up runner: %s", err)
 	}
 
 	if err = watch(watcher, runner); err != nil {
 		log.Fatalf("Error during watch: %s", err)
+	}
+}
+
+func setupLogging(opts options) {
+	if opts.verbose {
+		log.SetLevel(log.DebugLevel)
+	}
+	if opts.quiet {
+		log.SetLevel(log.WarnLevel)
 	}
 }
