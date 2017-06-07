@@ -123,7 +123,7 @@ func run(opts options) {
 	defer ui.Reset()
 	log.SetOutput(ui.Output())
 	log.SetFormatter(&log.TextFormatter{ForceColors: true})
-	ui.Header(formatHeader(opts.command))
+	ui.Header(opts.command)
 
 	excludeList, err := files.NewExcludeList(opts.exclude)
 	if err != nil {
@@ -150,9 +150,4 @@ func setupLogging(opts options) {
 	if opts.quiet {
 		log.SetLevel(log.WarnLevel)
 	}
-}
-
-// TODO: move to ui package?
-func formatHeader(command []string) string {
-	return "filewatcher │ " + strings.Join(command, " ")
 }

@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	tm "github.com/buger/goterm"
 )
@@ -55,9 +56,10 @@ func (ui *UI) draw() {
 }
 
 // Header sets the header to the specified string
-func (ui *UI) Header(header string) {
+func (ui *UI) Header(command []string) {
+	formatted := formatHeader(command)
 	ui.header.Buf.Reset()
-	ui.header.Buf.WriteString(header)
+	ui.header.Buf.WriteString(formatted)
 	ui.draw()
 }
 
@@ -85,4 +87,8 @@ func (f *flushWriter) Write(p []byte) (int, error) {
 	n, err := f.Writer.Write(p)
 	f.ui.draw()
 	return n, err
+}
+
+func formatHeader(command []string) string {
+	return "filewatcher │ " + strings.Join(command, " ")
 }
