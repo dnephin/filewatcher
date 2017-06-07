@@ -1,8 +1,12 @@
-hash: 82e73c3af150398bde28eb13ff80fe898f486f0ad23a9687cda936046f74ff3d
-updated: 2017-06-06T21:15:25.438237477Z
+hash: abe9d3f30a7cba0379ce77fda60f40254d012b496f3324f28bc0d9768be82ba1
+updated: 2017-06-07T20:28:32.044405693Z
 imports:
 - name: github.com/buger/goterm
   version: bc6c333206f446a53cac4db5d2e6a4316139d737
+- name: github.com/mattn/go-runewidth
+  version: 9e777a8366cce605130a531d2cd6363d07ad7317
+- name: github.com/nsf/termbox-go
+  version: 7994c181db7761ca3c67a217068cf31826113f5f
 - name: github.com/Sirupsen/logrus
   version: 68cec9f21fbf3ea8d8f98c044bc6ce05f17b267a
 - name: github.com/spf13/pflag
@@ -12,7 +16,7 @@ imports:
   subpackages:
   - assert
 - name: golang.org/x/sys
-  version: b90f89a1e7a9c1f6b918820b3daa7f08488c8594
+  version: b9e8d468b01f806830d387bd9a1fe96dc68129d1
   subpackages:
   - unix
 - name: gopkg.in/fsnotify.v1

@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	tm "github.com/buger/goterm"
+	termbox "github.com/nsf/termbox-go"
 )
 
 const border = "─ │ ┌ ┐ └ ┘"
@@ -17,8 +19,13 @@ type UI struct {
 	logs   *tm.Box
 }
 
-// SetupUI elements
-func SetupUI() (*UI, error) {
+// NewUI elements
+func NewUI(command []string) (*UI, error) {
+	err := termbox.Init()
+	if err != nil {
+		return nil, err
+	}
+
 	width := 100 | tm.PCT
 	ui := &UI{
 		header: tm.NewBox(width, 3, 0),
@@ -31,7 +38,7 @@ func SetupUI() (*UI, error) {
 	ui.footer.Border = border
 	ui.header.Border = border
 
-	ui.draw()
+	ui.Header(command)
 	return ui, nil
 }
 
@@ -73,8 +80,22 @@ func (ui *UI) Footer(footer string) {
 // Reset restores the terminal
 func (ui *UI) Reset() {
 	// Restore cursor
-	// TODO: not working in linux?
-	fmt.Fprint(tm.Screen, "\033[?25h")
+	termbox.Close()
+}
+
+func (ui *UI) Handle(chEvents chan Event) error {
+	for {
+		select {
+		case event := <- chEvents:
+			switch event.Type {
+			case EventRunFinished:
+				ui.Footer(event.Message)
+			case EventClear:
+				ui.logs.Buf.Reset()
+				ui.draw()
+			}
+		}
+	}
 }
 
 type flushWriter struct {
@@ -83,6 +104,7 @@ type flushWriter struct {
 }
 
 // TODO: wrap lines
+// TODO: either lock or send events to Handle() to deal with concurrency
 func (f *flushWriter) Write(p []byte) (int, error) {
 	n, err := f.Writer.Write(p)
 	f.ui.draw()
@@ -91,4 +113,62 @@ func (f *flushWriter) Write(p []byte) (int, error) {
 
 func formatHeader(command []string) string {
 	return "filewatcher │ " + strings.Join(command, " ")
+}
+
+// EventType is an enumeration of events that can be triggered by a user
+type Event struct {
+	Type EventType
+	Err error
+	Message string
+}
+
+type EventType int
+
+const (
+	EventClear EventType = iota
+	EventReset
+	EventUpdateCommand
+	EventRunFinished
+)
+
+const (
+	KeyC termbox.Key = 67
+	KeyR termbox.Key = 82
+	KeyU termbox.Key = 85
+)
+
+func RunKeyPoller(chEvents chan Event) error {
+	for {
+		switch ev := termbox.PollEvent(); ev.Type {
+		case termbox.EventKey:
+			switch ev.Key {
+			case termbox.KeyCtrlC:
+				return nil
+			case KeyC:
+				chEvents <- NewEvent(EventClear)
+			case KeyR:
+				chEvents <- NewEvent(EventReset)
+			case KeyU:
+				chEvents <- NewEvent(EventUpdateCommand)
+			}
+		case termbox.EventError:
+			return ev.Err
+		}
+	}
+}
+
+func NewEvent(eventType EventType) Event {
+	return Event{Type: eventType}
+}
+
+func NewRunFinishedEvent(err error, filename string, elapsed time.Duration) Event {
+	msg := "OK"
+	if err != nil {
+		msg = err.Error()
+	}
+	return Event{
+		Err: err,
+		Type: EventRunFinished,
+		Message: fmt.Sprintf("%s │ %s | %s", msg, filename, elapsed),
+	}
 }

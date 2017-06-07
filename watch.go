@@ -9,7 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/dnephin/filewatcher/files"
 	"github.com/dnephin/filewatcher/runner"
-	"github.com/dnephin/filewatcher/ui"
+	termui "github.com/dnephin/filewatcher/ui"
 	flag "github.com/spf13/pflag"
 	fsnotify "gopkg.in/fsnotify.v1"
 )
@@ -23,7 +23,7 @@ type options struct {
 	command []string
 }
 
-func watch(watcher *fsnotify.Watcher, runner *runner.Runner, ui *ui.UI) error {
+func watch(watcher *fsnotify.Watcher, runner *runner.Runner, chEvents chan termui.Event) error {
 	for {
 		select {
 		case event := <-watcher.Events:
@@ -40,13 +40,7 @@ func watch(watcher *fsnotify.Watcher, runner *runner.Runner, ui *ui.UI) error {
 			if !handled {
 				continue
 			}
-			// TODO: handle formatting somewhere else, and add color
-			elapsed := time.Since(start)
-			msg := "OK"
-			if err != nil {
-				msg = err.Error()
-			}
-			ui.Footer(fmt.Sprintf("%s │ %s", msg, elapsed))
+			chEvents <- termui.NewRunFinishedEvent(err, event.Name, time.Since(start))
 		case err := <-watcher.Errors:
 			return err
 		}
@@ -116,14 +110,13 @@ func main() {
 
 func run(opts options) {
 	// TODO: flag to disable UI
-	ui, err := ui.SetupUI()
+	ui, err := termui.NewUI(opts.command)
 	if err != nil {
 		log.Fatalf("Error seting up UI: %s", err)
 	}
 	defer ui.Reset()
 	log.SetOutput(ui.Output())
 	log.SetFormatter(&log.TextFormatter{ForceColors: true})
-	ui.Header(opts.command)
 
 	excludeList, err := files.NewExcludeList(opts.exclude)
 	if err != nil {
@@ -138,8 +131,14 @@ func run(opts options) {
 
 	streams := runner.Streams{Out: ui.Output(), Err: ui.Output()}
 	runner := runner.NewRunner(excludeList, opts.command, streams)
-	if err = watch(watcher, runner, ui); err != nil {
-		log.Fatalf("Error during watch: %s", err)
+	chEvents := make(chan termui.Event)
+
+	if err := monitor(
+		func() error { return watch(watcher, runner, chEvents) },
+		func() error { return termui.RunKeyPoller(chEvents) },
+		func() error { return ui.Handle(chEvents) },
+	); err != nil {
+		log.Fatalf("Error: %s", err)
 	}
 }
 
@@ -149,5 +148,23 @@ func setupLogging(opts options) {
 	}
 	if opts.quiet {
 		log.SetLevel(log.WarnLevel)
+	}
+}
+
+
+func monitor(funcs ...func() error) error {
+	errChan := make(chan error, 1)
+
+	mon := func(fnc func() error) {
+		errChan <- fnc()
+	}
+
+	for _, fnc := range funcs {
+		go mon(fnc)
+	}
+
+	select {
+	case err := <- errChan:
+		return err
 	}
 }

@@ -5,3 +5,6 @@ import:
 - package: github.com/Sirupsen/logrus
 - package: github.com/stretchr/testify
 - package: github.com/buger/goterm
+- package: github.com/nsf/termbox-go
+- package: github.com/mattn/go-runewidth
+  version: ^0.0.2
