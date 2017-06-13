@@ -73,14 +73,14 @@ func buildWatcher(dirs []string) (*fsnotify.Watcher, error) {
 	return watcher, nil
 }
 
-func setupFlags() options {
+func setupFlags() *options {
 	opts := options{}
 	flag.BoolVarP(&opts.verbose, "verbose", "v", false, "Verbose")
 	flag.BoolVarP(&opts.quiet, "quiet", "q", false, "Quiet")
 	flag.StringSliceVarP(&opts.exclude, "exclude", "x", nil, "Exclude file patterns")
 	flag.StringSliceVarP(&opts.dirs, "directory", "d", []string{"."}, "Directories to watch")
 	flag.IntVarP(&opts.depth, "depth", "L", 5, "Descend only level directories deep")
-	return opts
+	return &opts
 }
 
 func main() {
@@ -123,7 +123,7 @@ func main() {
 	}
 }
 
-func setupLogging(opts options) {
+func setupLogging(opts *options) {
 	if opts.verbose {
 		log.SetLevel(log.DebugLevel)
 	}

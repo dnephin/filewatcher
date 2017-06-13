@@ -35,6 +35,10 @@ func (el *ExcludeList) IsMatch(filename string) bool {
 	return false
 }
 
+func (el *ExcludeList) String() string {
+	return strings.Join(el.patterns, ", ")
+}
+
 func matchPath(pattern, filename string) bool {
 	// patterns were already validated in NewExcludeList, so error
 	// can be ignored here
