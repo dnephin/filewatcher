@@ -1,6 +1,8 @@
-hash: 7954d9bcb6ef60a088ddf8a75d8abda7144f0ca4cf223bbc6f6d61c596369e4b
-updated: 2017-06-06T20:12:29.488963176Z
+hash: 93dece82918110cbc1d4d042aacc2eee4f3fd1c6377083ed32f74b5bfb428c5a
+updated: 2017-06-13T21:14:36.924457844Z
 imports:
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/Sirupsen/logrus
   version: 33a34430d1c3dc71777fdd677864928e5b5812bc
 - name: github.com/spf13/pflag
@@ -9,6 +11,7 @@ imports:
   version: f6abca593680b2315d2075e0f5e2a9751e3f431a
   subpackages:
   - assert
+  - require
 - name: golang.org/x/sys
   version: b90f89a1e7a9c1f6b918820b3daa7f08488c8594
   subpackages:

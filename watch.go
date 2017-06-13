@@ -10,6 +10,7 @@ import (
 	"github.com/dnephin/filewatcher/runner"
 	flag "github.com/spf13/pflag"
 	"gopkg.in/fsnotify.v1"
+	"github.com/pkg/errors"
 )
 
 type options struct {
@@ -21,7 +22,7 @@ type options struct {
 	command []string
 }
 
-func watch(watcher *fsnotify.Watcher, runner *runner.Runner) error {
+func watch(watcher *fsnotify.Watcher, runner *runner.Runner, shutdown chan struct{}) error {
 	for {
 		select {
 		case event := <-watcher.Events:
@@ -39,6 +40,8 @@ func watch(watcher *fsnotify.Watcher, runner *runner.Runner) error {
 			}
 		case err := <-watcher.Errors:
 			return err
+		case <- shutdown:
+			return nil
 		}
 	}
 }
@@ -95,32 +98,37 @@ func main() {
 		cmd.PrintDefaults()
 	}
 	flag.Parse()
-	setupLogging(opts)
-
 	opts.command = flag.Args()
 	if len(opts.command) == 0 {
-		log.Fatalf("A command argument is required.")
+		log.Fatalf("A command argument is required")
 	}
 
+	setupLogging(opts)
+	shutdown := make(chan struct{}, 1)
+	if err := run(opts, shutdown); err != nil {
+		log.Fatal(err.Error())
+	}
+}
+
+func run(opts *options, shutdown chan struct{}) error {
 	excludeList, err := files.NewExcludeList(opts.exclude)
 	if err != nil {
-		log.Fatalf("Error creating exclude list: %s", err)
+		return errors.Wrap(err, "failed to create exclude list")
 	}
 
 	watcher, err := buildWatcher(files.WalkDirectories(opts.dirs, opts.depth, excludeList))
 	if err != nil {
-		log.Fatalf("Error setting up watcher: %s", err)
+		return errors.Wrap(err, "failed to setup watcher")
 	}
 	defer watcher.Close()
 
 	runner, err := runner.NewRunner(excludeList, opts.command)
 	if err != nil {
-		log.Fatalf("Error setting up runner: %s", err)
+		return errors.Wrap(err, "failed to setup runner")
 	}
 
-	if err = watch(watcher, runner); err != nil {
-		log.Fatalf("Error during watch: %s", err)
-	}
+	err = watch(watcher, runner, shutdown)
+	return errors.Wrap(err, "error while filewatching")
 }
 
 func setupLogging(opts *options) {
