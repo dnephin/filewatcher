@@ -12,13 +12,13 @@ const (
 	separator = string(filepath.Separator)
 )
 
-// SplitDirs splits a path into directory segments after cleaning the path
-func SplitDirs(path string) []string {
+// splitDirs splits a path into directory segments after cleaning the path
+func splitDirs(path string) []string {
 	return strings.Split(filepath.Clean(path), separator)
 }
 
 func isMaxDepth(path string, depth int) bool {
-	return len(SplitDirs(path)) == depth
+	return len(splitDirs(path)) == depth
 }
 
 // WalkDirectories walks each directory in the slice to the desired depth

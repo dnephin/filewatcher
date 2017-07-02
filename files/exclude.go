@@ -13,10 +13,12 @@ type ExcludeList struct {
 const (
 	anyPath        = "."
 	allDirectories = "**" + separator
+	defaultExclude = "**" + separator + ".?*"
 )
 
 // NewExcludeList creates a new ExcludeList
 func NewExcludeList(patterns []string) (*ExcludeList, error) {
+	patterns = append(patterns, defaultExclude)
 	for _, exclude := range patterns {
 		if _, err := filepath.Match(exclude, anyPath); err != nil {
 			return nil, err
@@ -52,7 +54,7 @@ func isAnyDirMatch(pattern, filename string) bool {
 	}
 
 	pattern = strings.TrimPrefix(pattern, allDirectories)
-	dirs := SplitDirs(filename)
+	dirs := splitDirs(filename)
 	for i := range dirs {
 		if matchPath(pattern, filepath.Join(dirs[i:]...)) {
 			return true
