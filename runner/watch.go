@@ -16,9 +16,7 @@ type WatchOptions struct {
 
 // Watch for events from the watcher and handle them with the runner
 func Watch(watcher *fsnotify.Watcher, runner *Runner, opts WatchOptions) error {
-	events := make(chan fsnotify.Event)
-	defer close(events)
-	go handleEvents(runner, events)
+	go runner.start()
 
 	for {
 		select {
@@ -34,14 +32,7 @@ func Watch(watcher *fsnotify.Watcher, runner *Runner, opts WatchOptions) error {
 				watcher.Add(event.Name)
 				continue
 			}
-
-			// Handle events in another goroutine so that on events floods only
-			// one event is run, and the rest are dropped.
-			select {
-			case events <- event:
-			default:
-				log.Debugf("Events queued, skipping: %s", event.Name)
-			}
+			runner.HandleEvent(event)
 
 		case err := <-watcher.Errors:
 			return err
@@ -61,13 +52,4 @@ func isNewDir(event fsnotify.Event, exclude *files.ExcludeList) bool {
 	}
 
 	return fileInfo.IsDir() && !exclude.IsMatch(event.Name)
-}
-
-func handleEvents(runner *Runner, events chan fsnotify.Event) {
-	for {
-		select {
-		case event := <-events:
-			runner.HandleEvent(event)
-		}
-	}
 }

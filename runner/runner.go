@@ -16,13 +16,25 @@ import (
 type Runner struct {
 	excludes *files.ExcludeList
 	command  []string
+	events   chan fsnotify.Event
 }
 
 // NewRunner creates a new Runner
-func NewRunner(excludes *files.ExcludeList, command []string) *Runner {
+func NewRunner(excludes *files.ExcludeList, command []string) (*Runner, func()) {
+	events := make(chan fsnotify.Event)
 	return &Runner{
 		excludes: excludes,
 		command:  command,
+		events:   events,
+	}, func() { close(events) }
+}
+
+func (runner *Runner) start() {
+	for {
+		select {
+		case event := <-runner.events:
+			runner.handle(event)
+		}
 	}
 }
 
@@ -32,6 +44,16 @@ func (runner *Runner) HandleEvent(event fsnotify.Event) {
 		return
 	}
 
+	// Handle events in another goroutine so that on events floods only
+	// one event is run, and the rest are dropped.
+	select {
+	case runner.events <- event:
+	default:
+		log.Debugf("Events queued, skipping: %s", event.Name)
+	}
+}
+
+func (runner *Runner) handle(event fsnotify.Event) {
 	start := time.Now()
 	command := runner.buildCommand(event.Name)
 	ui.PrintStart(command)

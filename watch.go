@@ -67,7 +67,8 @@ func run(opts *options) {
 	}
 	defer watcher.Close()
 
-	handler := runner.NewRunner(excludeList, opts.command)
+	handler, cleanup := runner.NewRunner(excludeList, opts.command)
+	defer cleanup()
 	if err = runner.Watch(watcher, handler, runner.WatchOptions{
 		IdleTimeout: opts.idleTimeout,
 	}); err != nil {
