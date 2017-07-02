@@ -2,16 +2,25 @@ package runner
 
 import (
 	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/dnephin/filewatcher/files"
 	"gopkg.in/fsnotify.v1"
 )
 
+// WatchOptions passed to watch
+type WatchOptions struct {
+	IdleTimeout time.Duration
+}
+
 // Watch for events from the watcher and handle them with the runner
-func Watch(watcher *fsnotify.Watcher, runner *Runner) error {
+func Watch(watcher *fsnotify.Watcher, runner *Runner, opts WatchOptions) error {
 	for {
 		select {
+		case <-time.After(opts.IdleTimeout):
+			log.Warnf("Idle timeout hit: %s", opts.IdleTimeout)
+			return nil
 		case event := <-watcher.Events:
 			log.Debugf("Event: %s", event)
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/dnephin/filewatcher/files"
@@ -13,12 +14,13 @@ import (
 )
 
 type options struct {
-	verbose bool
-	quiet   bool
-	exclude []string
-	dirs    []string
-	depth   int
-	command []string
+	verbose     bool
+	quiet       bool
+	exclude     []string
+	dirs        []string
+	depth       int
+	command     []string
+	idleTimeout time.Duration
 }
 
 func setupFlags() *options {
@@ -28,6 +30,7 @@ func setupFlags() *options {
 	flag.StringSliceVarP(&opts.exclude, "exclude", "x", nil, "Exclude file patterns")
 	flag.StringSliceVarP(&opts.dirs, "directory", "d", []string{"."}, "Directories to watch")
 	flag.IntVarP(&opts.depth, "depth", "L", 5, "Descend only level directories deep")
+	flag.DurationVar(&opts.idleTimeout, "idle-timeout", 10*time.Minute, "Exit after idle timeout")
 	return &opts
 }
 
@@ -65,7 +68,9 @@ func run(opts *options) {
 	defer watcher.Close()
 
 	handler := runner.NewRunner(excludeList, opts.command)
-	if err = runner.Watch(watcher, handler); err != nil {
+	if err = runner.Watch(watcher, handler, runner.WatchOptions{
+		IdleTimeout: opts.idleTimeout,
+	}); err != nil {
 		log.Fatalf("Error during watch: %s", err)
 	}
 }
