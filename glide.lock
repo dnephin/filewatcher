@@ -1,8 +1,10 @@
-hash: 7954d9bcb6ef60a088ddf8a75d8abda7144f0ca4cf223bbc6f6d61c596369e4b
-updated: 2017-06-06T20:12:29.488963176Z
+hash: 232fc89c3f1f432d329380b51518d832eddd4f6e43aa278cb85f0d0b07b37f60
+updated: 2017-07-02T18:32:47.510630368Z
 imports:
+- name: github.com/fatih/color
+  version: 570b54cabe6b8eb0bc2dfce68d964677d63b5260
 - name: github.com/Sirupsen/logrus
-  version: 33a34430d1c3dc71777fdd677864928e5b5812bc
+  version: 7dd06bf38e1e13df288d471a57d5adbac106be9e
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
 - name: github.com/stretchr/testify
@@ -10,7 +12,7 @@ imports:
   subpackages:
   - assert
 - name: golang.org/x/sys
-  version: b90f89a1e7a9c1f6b918820b3daa7f08488c8594
+  version: d18155cb60f6162f5e706d7f26e4e50a3d4da857
   subpackages:
   - unix
 - name: gopkg.in/fsnotify.v1
