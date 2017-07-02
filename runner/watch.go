@@ -16,11 +16,16 @@ type WatchOptions struct {
 
 // Watch for events from the watcher and handle them with the runner
 func Watch(watcher *fsnotify.Watcher, runner *Runner, opts WatchOptions) error {
+	events := make(chan fsnotify.Event)
+	defer close(events)
+	go handleEvents(runner, events)
+
 	for {
 		select {
 		case <-time.After(opts.IdleTimeout):
 			log.Warnf("Idle timeout hit: %s", opts.IdleTimeout)
 			return nil
+
 		case event := <-watcher.Events:
 			log.Debugf("Event: %s", event)
 
@@ -30,7 +35,13 @@ func Watch(watcher *fsnotify.Watcher, runner *Runner, opts WatchOptions) error {
 				continue
 			}
 
-			runner.HandleEvent(event)
+			// Handle events in another goroutine so that on events floods only
+			// one event is run, and the rest are dropped.
+			select {
+			case events <- event:
+			default:
+				log.Debugf("Events queued, skipping: %s", event.Name)
+			}
 
 		case err := <-watcher.Errors:
 			return err
@@ -50,4 +61,13 @@ func isNewDir(event fsnotify.Event, exclude *files.ExcludeList) bool {
 	}
 
 	return fileInfo.IsDir() && !exclude.IsMatch(event.Name)
+}
+
+func handleEvents(runner *Runner, events chan fsnotify.Event) {
+	for {
+		select {
+		case event := <-events:
+			runner.HandleEvent(event)
+		}
+	}
 }
