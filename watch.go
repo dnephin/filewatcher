@@ -21,6 +21,39 @@ type options struct {
 	depth       int
 	command     []string
 	idleTimeout time.Duration
+	events      eventOpt
+}
+
+type eventOpt struct {
+	value fsnotify.Op
+}
+
+func (o *eventOpt) Set(value string) error {
+	var op fsnotify.Op
+	switch value {
+	case "create":
+		op = fsnotify.Create
+	case "write":
+		op = fsnotify.Write
+	case "remove":
+		op = fsnotify.Remove
+	case "rename":
+		op = fsnotify.Rename
+	case "chmod":
+		op = fsnotify.Chmod
+	default:
+		return fmt.Errorf("unknown event: %s", value)
+	}
+	o.value = o.value | op
+	return nil
+}
+
+func (o *eventOpt) Type() string {
+	return "event"
+}
+
+func (o *eventOpt) String() string {
+	return fmt.Sprintf("%s", o.value)
 }
 
 func setupFlags() *options {
@@ -31,6 +64,7 @@ func setupFlags() *options {
 	flag.StringSliceVarP(&opts.dirs, "directory", "d", []string{"."}, "Directories to watch")
 	flag.IntVarP(&opts.depth, "depth", "L", 5, "Descend only level directories deep")
 	flag.DurationVar(&opts.idleTimeout, "idle-timeout", 10*time.Minute, "Exit after idle timeout")
+	flag.VarP(&opts.events, "event", "e", "events to watch (create,write,remove,rename,chmod)")
 	return &opts
 }
 
@@ -67,7 +101,8 @@ func run(opts *options) {
 	}
 	defer watcher.Close()
 
-	handler, cleanup := runner.NewRunner(excludeList, opts.command)
+	log.Debugf("Handling events: %s", opts.events.value)
+	handler, cleanup := runner.NewRunner(excludeList, opts.events.value, opts.command)
 	defer cleanup()
 	if err = runner.Watch(watcher, handler, runner.WatchOptions{
 		IdleTimeout: opts.idleTimeout,

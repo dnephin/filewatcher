@@ -17,15 +17,21 @@ type Runner struct {
 	excludes *files.ExcludeList
 	command  []string
 	events   chan fsnotify.Event
+	eventOp  fsnotify.Op
 }
 
 // NewRunner creates a new Runner
-func NewRunner(excludes *files.ExcludeList, command []string) (*Runner, func()) {
+func NewRunner(
+	excludes *files.ExcludeList,
+	eventOp fsnotify.Op,
+	command []string,
+) (*Runner, func()) {
 	events := make(chan fsnotify.Event)
 	return &Runner{
 		excludes: excludes,
 		command:  command,
 		events:   events,
+		eventOp:  eventOp,
 	}, func() { close(events) }
 }
 
@@ -63,7 +69,8 @@ func (runner *Runner) handle(event fsnotify.Event) {
 }
 
 func (runner *Runner) shouldHandle(event fsnotify.Event) bool {
-	if event.Op&fsnotify.Write != fsnotify.Write {
+	if event.Op&runner.eventOp == 0 {
+		log.Debugf("Skipping excluded event: %s (%v)", event.Op, event.Op&runner.eventOp)
 		return false
 	}
 
