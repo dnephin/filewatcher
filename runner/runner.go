@@ -27,6 +27,9 @@ func NewRunner(
 	command []string,
 ) (*Runner, func()) {
 	events := make(chan fsnotify.Event)
+	if eventOp == 0 {
+		eventOp = fsnotify.Write
+	}
 	return &Runner{
 		excludes: excludes,
 		command:  command,
