@@ -1,8 +1,0 @@
-package: github.com/dnephin/filewatcher
-import:
-- package: github.com/spf13/pflag
-- package: gopkg.in/fsnotify.v1
-- package: github.com/Sirupsen/logrus
-- package: github.com/stretchr/testify
-- package: github.com/fatih/color
-  version: ^1.5.0

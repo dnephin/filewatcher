@@ -9,8 +9,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/dnephin/filewatcher/files"
 	"github.com/dnephin/filewatcher/runner"
+	"github.com/fsnotify/fsnotify"
 	flag "github.com/spf13/pflag"
-	"gopkg.in/fsnotify.v1"
 )
 
 type options struct {

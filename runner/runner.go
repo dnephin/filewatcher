@@ -9,7 +9,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/dnephin/filewatcher/files"
 	"github.com/dnephin/filewatcher/ui"
-	fsnotify "gopkg.in/fsnotify.v1"
+	"github.com/fsnotify/fsnotify"
 )
 
 // Runner executes commands when an included file is modified
