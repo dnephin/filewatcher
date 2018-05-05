@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -12,11 +13,15 @@ import (
 // WatchOptions passed to watch
 type WatchOptions struct {
 	IdleTimeout time.Duration
+	Runner      *Runner
 }
 
 // Watch for events from the watcher and handle them with the runner
-func Watch(watcher *fsnotify.Watcher, runner *Runner, opts WatchOptions) error {
-	go runner.start()
+func Watch(watcher *fsnotify.Watcher, opts WatchOptions) error {
+	runner := opts.Runner
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go runner.start(ctx)
 
 	for {
 		select {
