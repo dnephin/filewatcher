@@ -22,6 +22,7 @@ image=builder:
 
     WORKDIR /go/src/github.com/dnephin/filewatcher
     ENV     CGO_ENABLED=0
+    ENV     PS1="# "
 
 image=linter:
   image: filewatcher-lint

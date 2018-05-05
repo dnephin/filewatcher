@@ -1,28 +1,38 @@
 package files
 
 import (
+	"fmt"
 	"testing"
 
-	a "github.com/stretchr/testify/assert"
+	"gotest.tools/assert"
 )
 
-func TestIsAnyDirMatchNotAllDirPrefix(t *testing.T) {
-	a.False(t, isAnyDirMatch("*/*", "./file"))
-}
-
-func TestIsAnyDirMatchNotAMatch(t *testing.T) {
-	a.False(t, isAnyDirMatch("**/*.go", "file"))
-	a.False(t, isAnyDirMatch("**/*.go", "file/something.txt"))
-	a.False(t, isAnyDirMatch("**/*.go", "something.go/other.txt"))
-	a.False(t, isAnyDirMatch("**/bogus", "a/bogus/b"))
-}
-
-func TestIsAnyDirMatch(t *testing.T) {
-	a.True(t, isAnyDirMatch("**/*.go", "file.go"))
-	a.True(t, isAnyDirMatch("**/*.go", "a/file.go"))
-	a.True(t, isAnyDirMatch("**/*.go", "a/b/file.go"))
-	a.True(t, isAnyDirMatch("**/*.go", "a/b/c/.go"))
-	a.True(t, isAnyDirMatch("**/file/*.go", "file/file.go"))
-	a.True(t, isAnyDirMatch("**/file/*.go", "a/file/file.go"))
-	a.True(t, isAnyDirMatch("**/file/*.go", "a/b/file/file.go"))
+func TestMatchPath(t *testing.T) {
+	var testcases = []struct {
+		pattern  string
+		filename string
+		expected bool
+	}{
+		{pattern: "*/*", filename: "foo/thing/file"},
+		{pattern: "**/*", filename: "a/b/file/file.go", expected: true},
+		{pattern: "**/*.go", filename: "file"},
+		{pattern: "**/*.go", filename: "file/something.txt"},
+		{pattern: "**/*.go", filename: "something.go/other.txt"},
+		{pattern: "**/bogus", filename: "a/bogus/b"},
+		{pattern: "**/*.go", filename: "file.go", expected: true},
+		{pattern: "**/*.go", filename: "a/file.go", expected: true},
+		{pattern: "**/*.go", filename: "a/b/file.go", expected: true},
+		{pattern: "**/*.go", filename: "a/b/c/.go", expected: true},
+		{pattern: "**/*.go", filename: "a/b/something.go/next.go", expected: true},
+		{pattern: "**/file/*.go", filename: "file/file.go", expected: true},
+		{pattern: "**/file/*.go", filename: "a/file/file.go", expected: true},
+		{pattern: "**/file/*.go", filename: "a/b/file/file.go", expected: true},
+	}
+	for _, testcase := range testcases {
+		name := fmt.Sprintf(`matchPath("%s","%s")`, testcase.pattern, testcase.filename)
+		t.Run(name, func(t *testing.T) {
+			actual := matchPath(testcase.pattern, testcase.filename)
+			assert.Assert(t, actual == testcase.expected)
+		})
+	}
 }

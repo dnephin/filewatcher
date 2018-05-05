@@ -56,6 +56,13 @@ func (o *eventOpt) String() string {
 	return fmt.Sprintf("%s", o.value)
 }
 
+func (o *eventOpt) Value() fsnotify.Op {
+	if o.value == 0 {
+		return fsnotify.Write | fsnotify.Create
+	}
+	return o.value
+}
+
 func setupFlags() *options {
 	opts := options{}
 	flag.BoolVarP(&opts.verbose, "verbose", "v", false, "Verbose")
@@ -95,18 +102,18 @@ func run(opts *options) {
 		log.Fatalf("Error creating exclude list: %s", err)
 	}
 
-	watcher, err := buildWatcher(files.WalkDirectories(opts.dirs, opts.depth, excludeList))
+	dirs := files.WalkDirectories(opts.dirs, opts.depth, excludeList)
+	watcher, err := buildWatcher(dirs)
 	if err != nil {
 		log.Fatalf("Error setting up watcher: %s", err)
 	}
 	defer watcher.Close()
 
-	log.Debugf("Handling events: %s", opts.events.value)
-	handler, cleanup := runner.NewRunner(excludeList, opts.events.value, opts.command)
+	log.Debugf("Handling events: %s", opts.events.Value())
+	handler, cleanup := runner.NewRunner(excludeList, opts.events.Value(), opts.command)
 	defer cleanup()
-	if err = runner.Watch(watcher, handler, runner.WatchOptions{
-		IdleTimeout: opts.idleTimeout,
-	}); err != nil {
+	watchOpts := runner.WatchOptions{IdleTimeout: opts.idleTimeout}
+	if err = runner.Watch(watcher, handler, watchOpts); err != nil {
 		log.Fatalf("Error during watch: %s", err)
 	}
 }
