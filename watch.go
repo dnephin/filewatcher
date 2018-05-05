@@ -10,7 +10,7 @@ import (
 	"github.com/dnephin/filewatcher/files"
 	"github.com/dnephin/filewatcher/runner"
 	"github.com/fsnotify/fsnotify"
-	flag "github.com/spf13/pflag"
+	"github.com/spf13/pflag"
 )
 
 type options struct {
@@ -56,33 +56,44 @@ func (o *eventOpt) String() string {
 	return fmt.Sprintf("%s", o.value)
 }
 
-func setupFlags() *options {
+func (o *eventOpt) Value() fsnotify.Op {
+	if o.value == 0 {
+		return fsnotify.Write | fsnotify.Create
+	}
+	return o.value
+}
+
+func setupFlags(args []string) *options {
+	flags := pflag.NewFlagSet(args[0], pflag.ContinueOnError)
 	opts := options{}
-	flag.BoolVarP(&opts.verbose, "verbose", "v", false, "Verbose")
-	flag.BoolVarP(&opts.quiet, "quiet", "q", false, "Quiet")
-	flag.StringSliceVarP(&opts.exclude, "exclude", "x", nil, "Exclude file patterns")
-	flag.StringSliceVarP(&opts.dirs, "directory", "d", []string{"."}, "Directories to watch")
-	flag.IntVarP(&opts.depth, "depth", "L", 5, "Descend only level directories deep")
-	flag.DurationVar(&opts.idleTimeout, "idle-timeout", 10*time.Minute, "Exit after idle timeout")
-	flag.VarP(&opts.events, "event", "e", "events to watch (create,write,remove,rename,chmod)")
+	flags.BoolVarP(&opts.verbose, "verbose", "v", false, "Verbose")
+	flags.BoolVarP(&opts.quiet, "quiet", "q", false, "Quiet")
+	flags.StringSliceVarP(&opts.exclude, "exclude", "x", nil, "Exclude file patterns")
+	flags.StringSliceVarP(&opts.dirs, "directory", "d", []string{"."}, "Directories to watch")
+	flags.IntVarP(&opts.depth, "depth", "L", 5, "Descend only level directories deep")
+	flags.DurationVar(&opts.idleTimeout, "idle-timeout", 10*time.Minute,
+		"Exit after idle timeout")
+	flags.VarP(&opts.events, "event", "e",
+		"events to watch (create,write,remove,rename,chmod)")
+
+	flags.SetInterspersed(false)
+	flags.Usage = func() {
+		out := os.Stderr
+		fmt.Fprintf(out, "Usage:\n  %s [OPTIONS] COMMAND ARGS... \n\n", os.Args[0])
+		fmt.Fprint(out, "Options:\n")
+		flags.PrintDefaults()
+	}
+	if err := flags.Parse(args[1:]); err != nil {
+		os.Exit(2)
+	}
+	opts.command = flags.Args()
 	return &opts
 }
 
 func main() {
-	opts := setupFlags()
-	cmd := flag.CommandLine
-	cmd.Init(os.Args[0], flag.ExitOnError)
-	cmd.SetInterspersed(false)
-	flag.Usage = func() {
-		out := os.Stderr
-		fmt.Fprintf(out, "Usage:\n  %s [OPTIONS] COMMAND ARGS... \n\n", os.Args[0])
-		fmt.Fprint(out, "Options:\n")
-		cmd.PrintDefaults()
-	}
-	flag.Parse()
+	opts := setupFlags(os.Args)
 	setupLogging(opts)
 
-	opts.command = flag.Args()
 	if len(opts.command) == 0 {
 		log.Fatalf("A command argument is required.")
 	}
@@ -95,18 +106,21 @@ func run(opts *options) {
 		log.Fatalf("Error creating exclude list: %s", err)
 	}
 
-	watcher, err := buildWatcher(files.WalkDirectories(opts.dirs, opts.depth, excludeList))
+	dirs := files.WalkDirectories(opts.dirs, opts.depth, excludeList)
+	watcher, err := buildWatcher(dirs)
 	if err != nil {
 		log.Fatalf("Error setting up watcher: %s", err)
 	}
 	defer watcher.Close()
 
-	log.Debugf("Handling events: %s", opts.events.value)
-	handler, cleanup := runner.NewRunner(excludeList, opts.events.value, opts.command)
+	log.Debugf("Handling events: %s", opts.events.Value())
+	handler, cleanup := runner.NewRunner(excludeList, opts.events.Value(), opts.command)
 	defer cleanup()
-	if err = runner.Watch(watcher, handler, runner.WatchOptions{
+	watchOpts := runner.WatchOptions{
 		IdleTimeout: opts.idleTimeout,
-	}); err != nil {
+		Runner:      handler,
+	}
+	if err = runner.Watch(watcher, watchOpts); err != nil {
 		log.Fatalf("Error during watch: %s", err)
 	}
 }

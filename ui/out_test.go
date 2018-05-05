@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"gotest.tools/assert"
 )
 
 func TestBox(t *testing.T) {
@@ -35,6 +35,6 @@ func TestSectionWidths(t *testing.T) {
 
 	for _, testcase := range testcases {
 		sections := sectionWidths(testcase.msg)
-		assert.Equal(t, testcase.expected, sections)
+		assert.DeepEqual(t, testcase.expected, sections)
 	}
 }

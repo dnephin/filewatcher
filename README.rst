@@ -46,10 +46,10 @@ variables are:
 
 * ``filepath`` - the relative path to the file that changed
 * ``dir`` - the directory of the file that changed
+* ``relative_dir`` - the directory of the file that changes with a ./ prefix
 
+These values are also set as environment variables for the process:
 
-TODO
-----
-
-* support reading options from a config file ``.filewatcher.yaml``
-* more variable substituions?
+* ``TEST_FILENAME`` - the relative path to the file that changed
+* ``TEST_DIRECTORY`` - the relative path to the directory of the file that
+  changed

@@ -1,9 +1,11 @@
 package runner
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -27,9 +29,6 @@ func NewRunner(
 	command []string,
 ) (*Runner, func()) {
 	events := make(chan fsnotify.Event)
-	if eventOp == 0 {
-		eventOp = fsnotify.Write
-	}
 	return &Runner{
 		excludes: excludes,
 		command:  command,
@@ -38,11 +37,17 @@ func NewRunner(
 	}, func() { close(events) }
 }
 
-func (runner *Runner) start() {
+func (runner *Runner) start(ctx context.Context) {
 	for {
 		select {
+		case <-ctx.Done():
+			return
 		case event := <-runner.events:
-			runner.handle(event)
+			// FIXME: I'm not sure how this empty event gets created
+			if event.Name == "" && event.Op == 0 {
+				return
+			}
+			runner.run(event)
 		}
 	}
 }
@@ -53,7 +58,7 @@ func (runner *Runner) HandleEvent(event fsnotify.Event) {
 		return
 	}
 
-	// Handle events in another goroutine so that on events floods only
+	// Send the event to an unbuffered channel so that on events floods only
 	// one event is run, and the rest are dropped.
 	select {
 	case runner.events <- event:
@@ -62,12 +67,12 @@ func (runner *Runner) HandleEvent(event fsnotify.Event) {
 	}
 }
 
-func (runner *Runner) handle(event fsnotify.Event) {
+func (runner *Runner) run(event fsnotify.Event) {
 	start := time.Now()
 	command := runner.buildCommand(event.Name)
 	ui.PrintStart(command)
 
-	err := run(command)
+	err := run(command, event.Name)
 	ui.PrintEnd(time.Since(start), event.Name, err)
 }
 
@@ -93,6 +98,8 @@ func (runner *Runner) buildCommand(filename string) []string {
 			return filename
 		case "dir":
 			return path.Dir(filename)
+		case "relative_dir":
+			return addDotSlash(filepath.Dir(filename))
 		}
 		return key
 	}
@@ -104,9 +111,16 @@ func (runner *Runner) buildCommand(filename string) []string {
 	return output
 }
 
-func run(command []string) error {
+func run(command []string, filename string) error {
 	cmd := exec.Command(command[0], command[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(),
+		"TEST_DIRECTORY="+addDotSlash(filepath.Dir(filename)),
+		"TEST_FILENAME="+addDotSlash(filename))
 	return cmd.Run()
+}
+
+func addDotSlash(filename string) string {
+	return "." + string(filepath.Separator) + filename
 }
