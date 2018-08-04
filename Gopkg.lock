@@ -42,6 +42,12 @@
   version = "v0.0.3"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/mattn/go-tty"
+  packages = ["."]
+  revision = "931426f7535ac39720c8909d70ece5a41a2502a6"
+
+[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
@@ -73,6 +79,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "64cb3e99cc99748894d452e8425ffb9ff80036fe9c6d648bc1bfb9cab17559cc"
+  inputs-digest = "164112b5096d9aa1df4fa4565723aa85697b8f1c4c05871057d54ec38aa36e7f"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -20,6 +20,7 @@ type Runner struct {
 	command  []string
 	events   chan fsnotify.Event
 	eventOp  fsnotify.Op
+	chUpdate chan Update
 }
 
 // NewRunner creates a new Runner
@@ -34,10 +35,18 @@ func NewRunner(
 		command:  command,
 		events:   events,
 		eventOp:  eventOp,
+		chUpdate: make(chan Update, 1),
 	}, func() { close(events) }
 }
 
 func (runner *Runner) start(ctx context.Context) {
+	go runner.runLoop(ctx)
+	go scanInput(runner.chUpdate)
+}
+
+func (runner *Runner) runLoop(ctx context.Context) {
+	// TODO: store as map to override keys
+	environ := os.Environ()
 	for {
 		select {
 		case <-ctx.Done():
@@ -47,7 +56,11 @@ func (runner *Runner) start(ctx context.Context) {
 			if event.Name == "" && event.Op == 0 {
 				return
 			}
-			runner.run(event)
+			runner.run(event, environ)
+		case update := <-runner.chUpdate:
+			if update.Env != "" {
+				environ = append(environ, update.Env)
+			}
 		}
 	}
 }
@@ -67,12 +80,12 @@ func (runner *Runner) HandleEvent(event fsnotify.Event) {
 	}
 }
 
-func (runner *Runner) run(event fsnotify.Event) {
+func (runner *Runner) run(event fsnotify.Event, environ []string) {
 	start := time.Now()
 	command := runner.buildCommand(event.Name)
 	ui.PrintStart(command)
 
-	err := run(command, event.Name)
+	err := run(command, event.Name, environ)
 	ui.PrintEnd(time.Since(start), event.Name, err)
 }
 
@@ -111,11 +124,11 @@ func (runner *Runner) buildCommand(filename string) []string {
 	return output
 }
 
-func run(command []string, filename string) error {
+func run(command []string, filename string, environ []string) error {
 	cmd := exec.Command(command[0], command[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Env = append(os.Environ(),
+	cmd.Env = append(environ,
 		"TEST_DIRECTORY="+addDotSlash(filepath.Dir(filename)),
 		"TEST_FILENAME="+addDotSlash(filename))
 	return cmd.Run()
