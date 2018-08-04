@@ -10,6 +10,7 @@ import (
 	"github.com/dnephin/filewatcher/files"
 	"github.com/dnephin/filewatcher/runner"
 	"github.com/fsnotify/fsnotify"
+	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )
 
@@ -97,19 +98,22 @@ func main() {
 	if len(opts.command) == 0 {
 		log.Fatalf("A command argument is required.")
 	}
-	run(opts)
+	if err := run(opts); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
 }
 
-func run(opts *options) {
+func run(opts *options) error {
 	excludeList, err := files.NewExcludeList(opts.exclude)
 	if err != nil {
-		log.Fatalf("Error creating exclude list: %s", err)
+		return errors.Wrap(err, "failed to create exclude list")
 	}
 
 	dirs := files.WalkDirectories(opts.dirs, opts.depth, excludeList)
 	watcher, err := buildWatcher(dirs)
 	if err != nil {
-		log.Fatalf("Error setting up watcher: %s", err)
+		return errors.Wrap(err, "failed to create file watcher")
 	}
 	defer watcher.Close()
 
@@ -120,9 +124,9 @@ func run(opts *options) {
 		IdleTimeout: opts.idleTimeout,
 		Runner:      handler,
 	}
-	if err = runner.Watch(watcher, watchOpts); err != nil {
-		log.Fatalf("Error during watch: %s", err)
-	}
+
+	err = runner.Watch(watcher, watchOpts)
+	return errors.Wrap(err, "failed during watch")
 }
 
 func setupLogging(opts *options) {

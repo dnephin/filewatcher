@@ -20,9 +20,15 @@ image=builder:
             go build -v -o /usr/bin/dep ./cmd/dep && \
             rm -rf /go/src/* /go/pkg/* /go/bin/*
 
+    ARG     GOTESTSUM=v0.3.0
+    RUN     go get -d gotest.tools/gotestsum && \
+            cd /go/src/gotest.tools/gotestsum && \
+            git checkout -q "$GOTESTSUM" && \
+            go build -v -o /usr/bin/gotestsum . && \
+            rm -rf /go/src/* /go/pkg/* /go/bin/*
+
     WORKDIR /go/src/github.com/dnephin/filewatcher
     ENV     CGO_ENABLED=0
-    ENV     PS1="# "
 
 image=linter:
   image: filewatcher-lint
@@ -42,12 +48,17 @@ job=shell:
   interactive: true
   provide-docker: true
   command: sh
+  env:
+    - "PS1=# "
 
 job=watch:
   use: builder
   mounts: [source]
   interactive: true
-  command: script/watch
+  command: |
+    dist/filewatcher -x vendor gotestsum -- -test.timeout 10s
+  env:
+    - 'GOTESTSUM_FORMAT=short-verbose'
 
 job=binary:
   use: builder

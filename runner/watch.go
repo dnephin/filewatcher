@@ -21,7 +21,7 @@ func Watch(watcher *fsnotify.Watcher, opts WatchOptions) error {
 	runner := opts.Runner
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go runner.start(ctx)
+	runner.start(ctx)
 
 	for {
 		select {
