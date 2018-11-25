@@ -6,6 +6,14 @@ mount=source:
   bind: .
   path: /code
 
+mount=buildcache:
+  bind: ~/.cache/go-build
+  path: /root/.cache/go-build
+
+mount=modcache:
+  bind: ~/go/pkg/mod
+  path: /go/pkg/mod
+
 image=builder:
   image: filewatcher-dev
   context: dockerfiles/
@@ -16,9 +24,9 @@ image=builder:
     ENV     CGO_ENABLED=0
     WORKDIR /code
 
-  job=shell:
+job=shell:
   use: builder
-  mounts: [source]
+  mounts: [source, buildcache, modcache]
   interactive: true
   provide-docker: true
   command: sh
@@ -27,13 +35,13 @@ image=builder:
 
 job=watch:
   use: builder
-  mounts: [source]
+  mounts: [source, buildcache, modcache]
   interactive: true
   command: script/watch
 
 job=binary:
   use: builder
-  mounts: [source]
+  mounts: [source, buildcache, modcache]
   command: script/binary
 
 
