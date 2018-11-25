@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/dnephin/filewatcher/files"
 	"github.com/dnephin/filewatcher/runner"
 	"github.com/fsnotify/fsnotify"
