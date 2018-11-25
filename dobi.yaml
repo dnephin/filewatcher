@@ -16,13 +16,15 @@ mount=modcache:
 
 image=builder:
   image: filewatcher-dev
-  context: dockerfiles/
+  context: .
   steps: |
     FROM    golang:1.11-alpine
     RUN     apk add -U curl git bash
-    ENV     GO111MODULE=on
+    ENV     GO111MODULE=auto
     ENV     CGO_ENABLED=0
     WORKDIR /code
+    COPY    .tools/go.mod /tools/go.mod
+    RUN     cd /tools && go get gotest.tools/gotestsum@v0.3.2
 
 job=shell:
   use: builder
