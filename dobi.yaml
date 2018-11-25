@@ -4,44 +4,26 @@ meta:
 
 mount=source:
   bind: .
-  path: /go/src/github.com/dnephin/filewatcher
+  path: /code
 
 image=builder:
   image: filewatcher-dev
   context: dockerfiles/
   steps: |
-    FROM    golang:1.10-alpine
+    FROM    golang:1.11-alpine
     RUN     apk add -U curl git bash
-
-    ARG     DEP_TAG=v0.4.1
-    RUN     go get -d github.com/golang/dep/cmd/dep && \
-            cd /go/src/github.com/golang/dep && \
-            git checkout -q "$DEP_TAG" && \
-            go build -v -o /usr/bin/dep ./cmd/dep && \
-            rm -rf /go/src/* /go/pkg/* /go/bin/*
-
-    WORKDIR /go/src/github.com/dnephin/filewatcher
+    ENV     GO111MODULE=on
     ENV     CGO_ENABLED=0
-    ENV     PS1="# "
+    WORKDIR /code
 
-image=linter:
-  image: filewatcher-lint
-  context: .
-  dockerfile: dockerfiles/Dockerfile.lint
-
-job=vendor:
-  use: builder
-  mounts: [source]
-  sources: 'glide.*'
-  artifact: 'vendor'
-  command: 'glide install -v'
-
-job=shell:
+  job=shell:
   use: builder
   mounts: [source]
   interactive: true
   provide-docker: true
   command: sh
+  env:
+    - "PS1=# "
 
 job=watch:
   use: builder
@@ -54,6 +36,12 @@ job=binary:
   mounts: [source]
   command: script/binary
 
+
+image=linter:
+  image: filewatcher-lint
+  context: .
+  dockerfile: dockerfiles/Dockerfile.lint
+
 job=lint:
   use: linter
   mounts: [source]
@@ -63,14 +51,3 @@ job=lint-shell:
   mounts: [source]
   interactive: true
   entrypoint: sh
-
-job=test-unit:
-  use: builder
-  mounts: [source]
-  command: "bash -c 'go test -v $(glide nv)'"
-
-alias=test:
-  tasks: [test-unit]
-
-alias=deps:
-  tasks: [vendor]
